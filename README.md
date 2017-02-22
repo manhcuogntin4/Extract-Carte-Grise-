@@ -9,4 +9,4 @@ Step 2 : Classify the cni, passeport, carte grise with the other type by the con
 
 Second solution 
 
-Using the solution presented in README.MD in AnnnotationTool. Some changes need to be added in the shell file.
+Using the solution presented in README.MD in AnnnotationTool. Some changes need to be added in the shell file for suitable the number of class. Remove line #import cv2.cv as cv if you use the OpenCV3
