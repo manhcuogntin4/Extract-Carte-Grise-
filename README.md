@@ -9,4 +9,4 @@ Step 2 : Classify the cni, passeport, carte grise with the other type by the con
 
 Second solution 
 
-Using the solution presented in README.MD in AnnnotationTool. Some changes need to be added. 
+Using the solution presented in README.MD in AnnnotationTool. Some changes need to be added in the shell file.
