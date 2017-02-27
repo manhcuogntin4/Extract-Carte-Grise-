@@ -12,3 +12,5 @@ Second solution
 Using the solution presented in README.MD in AnnnotationTool. Some changes need to be added in the shell file for suitable the number of class. Remove line #import cv2.cv as cv if you use the OpenCV3
 
 Attention : Change the number of output : num_output in the deploy.prototxt and train_val.prototxt to the real number types of docs.
+
+Step 3: Prepare DataSet for Faster RCNN with the cpdata.sh shell
