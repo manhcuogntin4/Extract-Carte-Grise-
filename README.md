@@ -14,3 +14,20 @@ Using the solution presented in README.MD in AnnnotationTool. Some changes need 
 Attention : Change the number of output : num_output in the deploy.prototxt and train_val.prototxt to the real number types of docs.
 
 Step 3: Prepare DataSet for Faster RCNN with the cpdata.sh shell
+
+Step 4: Upload the file DataSet on S3
+
+Step 5: Download file from S3 to EC2
+$> aws configure
+
+ 
+
+Access key id : <acces key>
+
+Secret Access Key : <secret access key>
+
+Zone : eu-west-1
+
+Format : json
+
+$> aws s3 cp link s3 --recursive
