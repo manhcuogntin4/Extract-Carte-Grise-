@@ -31,3 +31,10 @@ Zone : eu-west-1
 Format : json
 
 $> aws s3 cp link s3 --recursive
+
+Step 6 : Prepare for trainning Faster RCNN.
+Change the number of classe in the axa.py, train.proto and test.proto files.
+Start trainning with command line :
+./tools/train_net.py --gpu 0 --solver models/axa_poc/VGG_CNN_M_1024/faster_rcnn_end2end/solver.prototxt --weights data/imagenet_models/VGG_CNN_M_1024.v2.caffemodel --imdb axa_train --iters 80000 --cfg experiments/cfgs/faster_rcnn_end2end.yml
+
+Step 7 : Prepare data for CLSTM with gendataset.py
