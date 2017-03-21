@@ -96,41 +96,84 @@ def extract_roi(class_name, dets, thresh=0.5):
         # a small regulation of detected zone, comment me if the lastest result is good enough
         hight = bbox[3] - bbox[1]
         if class_name == 'nom':
+            #verion 1.0 15/03/17
+            # bbox[0] -= 0.05 * hight
+            # #bbox[1] -= 0.1 * hight
+            # bbox[2] += 0.1 * (bbox[2] - bbox[0])
+            # bbox[3] += 0.15 * hight
+            #verion 2.0
             bbox[0] -= 0.05 * hight
-            #bbox[1] -= 0.1 * hight
+            bbox[1] -= 0.05 * hight
             bbox[2] += 0.1 * (bbox[2] - bbox[0])
-            bbox[3] += 0.15 * hight
+            bbox[3] += 0.05 * hight
+
         if class_name == 'prenom':
+            #version 1.0 20/03/17
+            # bbox[0] -= 0.2 * hight
+            # bbox[1] -= 0.1 * hight
+            # bbox[2] += 0.05 * (bbox[2] - bbox[0])
+            # bbox[3] += 0.15 * hight
+             #version 1.1 20/03/17
             bbox[0] -= 0.2 * hight
-            bbox[1] -= 0.1 * hight
+            bbox[1] -= 0.25 * hight
             bbox[2] += 0.05 * (bbox[2] - bbox[0])
             bbox[3] += 0.15 * hight
         if class_name == 'adresse':
-            bbox[0] -= 0.2 * hight
-            bbox[1] -=0.1 * hight
-            bbox[2] += 0.1 * hight
+            #version 1.0 17/03/17
+            # bbox[0] -= 0.2 * hight
+            # bbox[1] -=0.1 * hight
+            # bbox[2] += 0.1 * hight
+            # bbox[3] += 0.15 * hight
+            #version 2.0
+            bbox[0] -= 0.3 * hight
+            bbox[1] -=0.05 * hight
+            bbox[2] += 0.1 * (bbox[2] - bbox[0])
             bbox[3] += 0.15 * hight
+
         if class_name == 'date':
+            #version 1.0 15/03/17
+            # bbox[0] -= 0.05 * hight
+            # bbox[2] += 0.05 * (bbox[2] - bbox[0])
+            # bbox[3] += 0.15 * hight
+            #version 2.0
             bbox[0] -= 0.05 * hight
             #bbox[1] -= 0.1 * hight
             bbox[2] += 0.05 * (bbox[2] - bbox[0])
             bbox[3] += 0.15 * hight
         if class_name == 'ville':
+            #version 1.0 15/03/17
+            # bbox[0] -= 0.05 * hight
+            # bbox[1] += 0.25 * hight
+            # bbox[2] += 0.1 * (bbox[2] - bbox[0])
+            # bbox[3] += 0.25 * hight
+            #version 2.0
             bbox[0] -= 0.05 * hight
-            bbox[1] += 0.25 * hight
+            bbox[1] -= 0.25 * hight
             bbox[2] += 0.1 * (bbox[2] - bbox[0])
-            bbox[3] += 0.25 * hight
+            bbox[3] += 0.2 * hight
         if class_name == 'numero':
+            #version 1.0 15/03/17
+            # bbox[0] -= 0.2 * hight
+            # bbox[2] += 0.1 * (bbox[2] - bbox[0])
+            # bbox[3] += 0.15 * hight
+            #version 2.0
             bbox[0] -= 0.2 * hight
-            #bbox[1] -= 0.1 * hight
             bbox[2] += 0.1 * (bbox[2] - bbox[0])
-            bbox[3] += 0.15 * hight
+    
+
         if class_name == 'marque':
-            bbox[0] -= 0.2 * hight
-            bbox[1] -= 0.1 * hight
-            bbox[2] += 0.05 * (bbox[2] - bbox[0])
+            #version 1.0 15/03/17
+            # bbox[0] -= 0.2 * hight
+            # bbox[1] -= 0.1 * hight
+            # bbox[2] += 0.05 * (bbox[2] - bbox[0])
+            # bbox[3] += 0.05 * hight
+            #version 2.0 
+            bbox[0] -= 0.3 * hight
+            bbox[1] -= 0.05 * hight
+            bbox[2] += 0.1 * (bbox[2] - bbox[0])
             bbox[3] += 0.05 * hight
         if class_name == 'type_mine':
+            #ok
             bbox[0] -= 0.2 * hight
             bbox[1] -= 0.1 * hight
             bbox[2] += 0.05 * (bbox[2] - bbox[0])
@@ -173,7 +216,7 @@ def demo(net, image_name):
            '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
     # Visualize detections for each class
-    CONF_THRESH = 0.2
+    CONF_THRESH = 0.1
     NMS_THRESH = 0.3
     res = {}
     roi_file_name=[]
@@ -192,6 +235,11 @@ def demo(net, image_name):
             #res[cls] = (bbx, txt, prob)
         # vis_detections(im, cls, dets, thresh=CONF_THRESH)
             bbx = tmp[0]  # TODO: Find the zone with greatest probability
+            #print "bbx:", bbx
+            if(bbx[0]<0):
+                bbx[0]=0
+            if(bbx[2]<0):
+                bbx[2]=0
                 # txt, prob = clstm_ocr(im[bbx[1]:bbx[3], bbx[0]:bbx[2]], cls=='lieu')
                 # if(prob<0.95):
                 #     txt1,prob1=clstm_ocr(im[bbx[1]-3:bbx[3]+3, bbx[0]:bbx[2]], cls=='lieu')
@@ -199,20 +247,28 @@ def demo(net, image_name):
                 #         txt=txt1
                 #         prob=prob1
             if cls!="mrz":
-                if cls== "nom":
-                    txt, prob =calib_roi(im,bbx,cls)
-                else:
-                    txt, prob="test", 1
+                # if cls== "nom":
+                #     txt, prob =calib_roi(im,bbx,cls)
+                # else:
+                #     txt, prob="test", 1
+                txt, prob=calib_roi(im,bbx,cls)
                 #Process tesseract
-                # print "Process tesseract"
-                # pts_msz = [int(bx) for bx in bbx]
-                # filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
-                # filename = os.path.join(UPLOAD_FOLDER, filename_)
-                # cv2.imwrite(filename, im[pts_msz[1]:pts_msz[3], pts_msz[0]:pts_msz[2]])
-                # txt_tesseract = pytesseract.image_to_string(Image.open(filename))
-                # txt=txt+"tesseract:"+ txt_tesseract
-                print "demo"
-                
+                if(txt!=""):
+                    pts_cls = [int(bx) for bx in bbx]
+                    if(pts_cls[0]!=pts_cls[2] and pts_cls[1]!=pts_cls[3]):
+                        filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
+                        filename = os.path.join(UPLOAD_FOLDER, filename_)
+                        cv2.imwrite(filename, im[pts_cls[1]:pts_cls[3], pts_cls[0]:pts_cls[2]])
+                        txt_tesseract = pytesseract.image_to_string(Image.open(filename))
+                        txt=txt+":"+ txt_tesseract
+                        #Add files to the data set
+                        res[cls] = (bbx, txt, prob)
+                        roi_file_name.append(filename)
+                        filetext=filename+"txt"
+                        f=open(filetext, "w")
+                        f.write(txt.encode('utf8'))
+                        f.close()
+                        
             else :
                 pts_msz = [int(bx) for bx in bbx]
                 filename_ = werkzeug.secure_filename('output' + "mrz" + image_name + '.png')
@@ -223,21 +279,16 @@ def demo(net, image_name):
                 	txt= txt[-5:-3]+"-"+ txt[-7:-5]+"-"+ txt[-9:-7]
 
             #txt, prob =calib_roi(im,bbx,cls)
-            res[cls] = (bbx, txt, prob)
-            pts = [int(bx) for bx in bbx]   
-            # filename_ = str(datetime.datetime.now()).replace(' ', '_') + \
-            # werkzeug.secure_filename('output' + str(cls) + image_name+str(cls_ind) + '.png')
-            filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
-            filename = os.path.join(UPLOAD_FOLDER, filename_)
-            cv2.imwrite(filename, im[pts[1]:pts[3], pts[0]:pts[2]])
-            roi_file_name.append(filename)
-            # filetext_=str(datetime.datetime.now()).replace(' ', '_') + \
-            # werkzeug.secure_filename('output' + str(cls_ind) + '.txt')
-            #filetext = os.path.join(UPLOAD_FOLDER, filetext_)
-            filetext=filename+"txt"
-            f=open(filetext, "w")
-            f.write(txt.encode('utf8'))
-            f.close()
+            # res[cls] = (bbx, txt, prob)
+            # pts = [int(bx) for bx in bbx]  
+            # filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
+            # filename = os.path.join(UPLOAD_FOLDER, filename_)
+            # cv2.imwrite(filename, im[pts[1]:pts[3], pts[0]:pts[2]])
+            # roi_file_name.append(filename)
+            # filetext=filename+"txt"
+            # f=open(filetext, "w")
+            # f.write(txt.encode('utf8'))
+            # f.close()
     im = im[:, :, (2, 1, 0)]
     #return (im, res, timer.total_time, roi_file_name)
     return (im, res, timer.total_time), roi_file_name
@@ -306,7 +357,7 @@ def demo2(net, image_name):
     NMS_THRESH = 0.3
     res = {}
     roi_file_name=[]
-    if check(boxes, scores, CONF_THRESH, NMS_THRESH):
+    if False: #check(boxes, scores, CONF_THRESH, NMS_THRESH):
         for cls_ind, cls in enumerate(CLASSES[3:]):
             cls_ind += 3 # because we skipped background
             cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
@@ -319,6 +370,7 @@ def demo2(net, image_name):
     
             if len(tmp) > 0:
                 bbx = tmp[0]  # TODO: Find the zone with greatest probability
+                print "bbx:", bbx
                 # txt, prob = clstm_ocr(im[bbx[1]:bbx[3], bbx[0]:bbx[2]], cls=='lieu')
                 # if(prob<0.95):
                 #     txt1,prob1=clstm_ocr(im[bbx[1]-3:bbx[3]+3, bbx[0]:bbx[2]], cls=='lieu')
@@ -327,15 +379,24 @@ def demo2(net, image_name):
                 #         prob=prob1
                 if cls!="mrz":
                     txt, prob =calib_roi(im,bbx,cls)
+                    if(txt!=""):
                     # Process tesseract
-                    print "Process tesseract"
-                    pts_msz = [int(bx) for bx in bbx]
-                    filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
-                    filename = os.path.join(UPLOAD_FOLDER, filename_)
-                    cv2.imwrite(filename, im[pts_msz[1]:pts_msz[3], pts_msz[0]:pts_msz[2]])
-                    txt_tesseract = pytesseract.image_to_string(Image.open(filename))
-                    txt=txt+"tesseract:"+ txt_tesseract
-                    print "demo2"
+                        print "Process tesseract"
+                        pts_cls = [int(bx) for bx in bbx]
+                        print "pts_cls:", pts_cls
+                        if(pts_cls[0]!=pts_cls[2] and pts_cls[1]!=pts_cls[3]):
+                            filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
+                            filename = os.path.join(UPLOAD_FOLDER, filename_)
+                            cv2.imwrite(filename, im[pts_cls[1]:pts_cls[3], pts_cls[0]:pts_cls[2]])
+                            txt_tesseract = pytesseract.image_to_string(Image.open(filename))
+                            txt=txt+"tesseract:"+ txt_tesseract
+                            #Add files to the data set
+                            res[cls] = (bbx, txt, prob)
+                            roi_file_name.append(filename)
+                            filetext=filename+"txt"
+                            f=open(filetext, "w")
+                            f.write(txt.encode('utf8'))
+                            f.close()
                 else :
                     pts_msz = [int(bx) for bx in bbx]
                     filename_ = werkzeug.secure_filename('output' + "mrz" + image_name + '.png')
@@ -345,21 +406,16 @@ def demo2(net, image_name):
                     if(len(txt)>9):
                 		txt= txt[-5:-3]+"-"+ txt[-7:-5]+"-"+ txt[-9:-7]
 
-                res[cls] = (bbx, txt, prob)
-                pts = [int(bx) for bx in bbx]   
-                # filename_ = str(datetime.datetime.now()).replace(' ', '_') + \
-                # werkzeug.secure_filename('output' + str(cls) + image_name+str(cls_ind) + '.png')
-                filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
-                filename = os.path.join(UPLOAD_FOLDER, filename_)
-                cv2.imwrite(filename, im[pts[1]:pts[3], pts[0]:pts[2]])
-                roi_file_name.append(filename)
-                # filetext_=str(datetime.datetime.now()).replace(' ', '_') + \
-                # werkzeug.secure_filename('output' + str(cls_ind) + '.txt')
-                #filetext = os.path.join(UPLOAD_FOLDER, filetext_)
-                filetext=filename+"txt"
-                f=open(filetext, "w")
-                f.write(txt.encode('utf8'))
-                f.close()
+                # res[cls] = (bbx, txt, prob)
+                # pts = [int(bx) for bx in bbx]   
+                # filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
+                # filename = os.path.join(UPLOAD_FOLDER, filename_)
+                # cv2.imwrite(filename, im[pts[1]:pts[3], pts[0]:pts[2]])
+                # roi_file_name.append(filename)
+                # filetext=filename+"txt"
+                # f=open(filetext, "w")
+                # f.write(txt.encode('utf8'))
+                # f.close()
     else:  
         cls_ind = 1 # CNI
         cls = CLASSES[cls_ind]
@@ -442,15 +498,16 @@ def detect_carte_grise(filename):
     print '\n\nLoaded network {:s}'.format(caffemodel)
 
     print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-    print 'Demo for classified CNI image...'
+    print 'Demo for classified carte grise image...'
     return demo2(net, filename)
 
 def calib_roi(im,bbx,cls):
     #txt, prob = clstm_ocr_carte_grise(im[bbx[1]:bbx[3], bbx[0]:bbx[2]], cls=='lieu')
     txt, prob = clstm_ocr_carte_grise(im[bbx[1]:bbx[3], bbx[0]:bbx[2]], cls)
-    if(prob<0.95):
+    if(prob<0.99):
         for i in range(0,2):
             for j in range(0,2):
+                #print "calib", bbx
                 #txt_temp,prob_temp=clstm_ocr_calib_carte_grise(im[bbx[1]-5*i*math.pow( -1, j):bbx[3]+5*i*math.pow( -1, j), bbx[0]-3*i*math.pow( -1, j):bbx[2]+3*i*math.pow( -1, j)], cls=='lieu')
                 txt_temp,prob_temp=clstm_ocr_calib_carte_grise(im[bbx[1]-5*i*math.pow( -1, j):bbx[3]+5*i*math.pow( -1, j), bbx[0]-3*i*math.pow( -1, j):bbx[2]+3*i*math.pow( -1, j)], cls)
                 if(prob<prob_temp):
