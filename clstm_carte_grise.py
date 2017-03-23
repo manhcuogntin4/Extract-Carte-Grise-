@@ -12,7 +12,7 @@ sys.setdefaultencoding('utf-8')
 CACHE_FOLDER = '/tmp/caffe_demos_uploads/cache'
 this_dir = os.path.dirname(__file__)
 
-def get_similar(str_verify, isLieu=False, score=0.6):
+def get_similar(str_verify, cls="ville", score=0.7):
 	words = []
 	if not os.path.exists(CACHE_FOLDER):
 		os.makedirs(CACHE_FOLDER)
@@ -48,22 +48,25 @@ def extract_text(img_path, model_path):
 	ocr.load(model_path)
 	imgFile = Image.open(img_path)
 	text = ocr.recognize(imgFile)
+	#print text
 	text.encode('utf-8')
+
 	chars = ocr.recognize_chars(imgFile)
 	prob = 1
 	index = 0
 	#print text
-	if(text.find(u':') != -1 and text.index(u':') < 5):
-		index = text.index(u':')+1
-	if(text.find(u' ') != -1 and (text.index(u' ') <= 3)):
-		if(len(text)>text.index(u' ')+1):		
-			index = text.index(u' ')+1
+	# if(text.find(u':') != -1 and text.index(u':') < 5):
+	# 	index = text.index(u':')+1
+	# if(text.find(u' ') != -1 and (text.index(u' ') <= 3)):
+	# 	if(len(text)>text.index(u' ')+1):		
+	# 		index = text.index(u' ')+1
 	for ind, j in enumerate(chars):
 		#print j
-		if ind >= index:		
+		#print j
+		if ind >= 0:		
 			prob *= j.confidence
 	#print index	
-	return text[index:], prob, index
+	return text[0:], prob, 0
 
 
 def crop_image(img,cropX=0, cropY=0, cropWidth=0, cropHeight=0):
@@ -76,44 +79,67 @@ def crop_image(img,cropX=0, cropY=0, cropWidth=0, cropHeight=0):
 
 
 def clstm_ocr_carte_grise(img, cls="nom"):
-	print "clstm_ocr"
 	print cls
 	if not os.path.exists(CACHE_FOLDER):
 		os.makedirs(CACHE_FOLDER)
 	if cls=="nom":
 		#model_path = os.path.join(this_dir, 'model_nom_carte_grise_090317.clstm')
-		model_path = os.path.join(this_dir, 'model_carte_grise_090317.clstm')
-		print "nom"
+		print "nom-1"
+		model_path = os.path.join(this_dir, 'model_nom_carte_grise_120317x3.clstm')
 	if cls=="prenom":
+		print "prenom-1"
 		model_path = os.path.join(this_dir, 'model_prenom_carte_grise_090317.clstm')
-		print "prenom"
+		#model_path = os.path.join(this_dir, 'model_prenom_carte_grise_120317x3.clstm')
 	if cls=="numero":
-		model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
+		print "numero-1"
+		#model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
 	if cls=="adresse":
-		print "adresse"
-		model_path = os.path.join(this_dir, 'model_adresse_carte_grise_090317.clstm')
+		print "adresse-1"
+		model_path = os.path.join(this_dir, 'model_adressex3_carte_grise_120317.clstm')
 	if cls=="ville":
-		print "ville"
-		model_path = os.path.join(this_dir, 'model_ville_carte_grise_090317.clstm')
+		#model_path = os.path.join(this_dir, 'model_ville_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
+		#model_path = os.path.join(this_dir, 'model_villex3_carte_grise_120317.clstm')
 	if cls=="type_mine":
-		model_path = os.path.join(this_dir, 'model_type_mine_carte_grise_090317.clstm')
+		#model_path = os.path.join(this_dir, 'model_type_mine_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
 	if cls=="marque":
-		model_path = os.path.join(this_dir, 'model_marque_carte_grise_090317.clstm')
-	else:
-		model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
+		#model_path = os.path.join(this_dir, 'model_marque_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
+	if cls=="date":
+		print "date1"
+		model_path = os.path.join(this_dir, 'model_date_carte_grise_090317.clstm')
+	# else:
+	# 	model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
+
 		#model_path = os.path.join(this_dir, 'model-lieu-1212-binary.clstm')
-	converted_image_path, image = convert_to_binary(img)
-	#maxPro = 0
-	#ocr_result = ""
-	ocr_result, maxPro, index=extract_text(converted_image_path, model_path)
+	#print img.shape, img.size
+	if(img.size>0):
+		converted_image_path, image = convert_to_binary(img)
+		#maxPro = 0
+		#ocr_result = ""
+		ocr_result, maxPro, index=extract_text(converted_image_path, model_path)
+	else:
+		return ("",0)
+
 	if(index>0):
 		image=image[10:,:]
-	cropX=1
-	cropY=4
-	cropWidth=1
+	cropX=2
+	cropY=6
+	cropWidth=2
 	cropHeight=4
+	if cls=="date" or cls== "nom" or cls=="numero":
+		cropY=7
+		cropHeight=5
+	if cls=="numero":
+		cropWidth=4
+		cropX=4
+	if cls=="marque" or cls=="type_mine":
+		cropHeight=7
+
 	# if(islieu):
-	# 	cropHeight=3
+	# 	cropHeight=3																																																					
 	# 	cropY=3
 	# 	cropX=3
 	# 	cropWidth=3
@@ -121,14 +147,14 @@ def clstm_ocr_carte_grise(img, cls="nom"):
 		for j in range (0,cropY):
 			for k in range (0,cropWidth):
 				for h in range (0, cropHeight):
-					img_path = crop_image(image, i, j, k, h)
+					img_path = crop_image(image, 4*i, 3*j, 4*k, 3*h)
 					text, prob, index = extract_text(img_path, model_path)
 					#print text, prob
 					if(prob > maxPro) and (len(text)>=2):
 						maxPro = prob
-						ocr_result = text + ": cls= "+ str(cls)
-					if (maxPro > 0.95) and (len(text) >= 2):
-						break	
+						ocr_result = text
+					# if (maxPro > 0.95) and (len(text) >= 2):
+					# 	break	
 	#print maxPro, ocr_result	
 	# if(islieu and maxPro<1):	
 	# 	if(maxPro<0.9):
@@ -144,40 +170,40 @@ def clstm_ocr_carte_grise(img, cls="nom"):
 def clstm_ocr_calib_carte_grise(img, cls="nom"):
 	if not os.path.exists(CACHE_FOLDER):
 		os.makedirs(CACHE_FOLDER)
-	print "class=", cls
 	if cls=="nom":
 		#model_path = os.path.join(this_dir, 'model_nom_carte_grise_090317.clstm')
-		model_path = os.path.join(this_dir, 'model_carte_grise_090317.clstm')
-		print "nom"
+		model_path = os.path.join(this_dir, 'model_nom_carte_grise_120317x3.clstm')
 	if cls=="prenom":
 		model_path = os.path.join(this_dir, 'model_prenom_carte_grise_090317.clstm')
-		print "prenom"
+		#model_path = os.path.join(this_dir, 'model_prenom_carte_grise_120317x3.clstm')
 	if cls=="numero":
-		model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
-		print "numero"
+		#model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
 	if cls=="adresse":
-		model_path = os.path.join(this_dir, 'model_adresse_carte_grise_090317.clstm')
-		print "adresse"
+		model_path = os.path.join(this_dir, 'model_adressex3_carte_grise_120317.clstm')
 	if cls=="ville":
-		model_path = os.path.join(this_dir, 'model_ville_carte_grise_090317.clstm')
-		print "ville"
+		#model_path = os.path.join(this_dir, 'model_ville_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
+		#model_path = os.path.join(this_dir, 'model_villex3_carte_grise_120317.clstm')
 	if cls=="type_mine":
-		model_path = os.path.join(this_dir, 'model_type_mine_carte_grise_090317.clstm')
-		print "type_mine"
+		#model_path = os.path.join(this_dir, 'model_type_mine_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
 	if cls=="marque":
-		model_path = os.path.join(this_dir, 'model_marque_carte_grise_090317.clstm')
-		print "marque"
+		#model_path = os.path.join(this_dir, 'model_marque_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
 	if cls=="date":
 		model_path = os.path.join(this_dir, 'model_date_carte_grise_090317.clstm')
-		print "date"
-	else:
-		model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
+	# else:
+	# 	model_path = os.path.join(this_dir, 'model_numero_carte_grise_090317.clstm')
 		#print "date"
 		#model_path = os.path.join(this_dir, 'model-lieu-1212-binary.clstm')
-	converted_image_path, image = convert_to_binary(img)
+	if(img.size>0):
+		converted_image_path, image = convert_to_binary(img)
 	#maxPro = 0
 	#ocr_result = ""
-	ocr_result, maxPro, index=extract_text(converted_image_path, model_path)
+		ocr_result, maxPro, index=extract_text(converted_image_path, model_path)
+	else:
+		return ("",0)
 	# if(islieu):	
 	# 	if(maxPro<0.9):
 	# 		ocr=get_similar(ocr_result,islieu,0.5)

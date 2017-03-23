@@ -150,15 +150,21 @@ def extract_roi(class_name, dets, thresh=0.5):
             bbox[0] -= 0.05 * hight
             bbox[1] -= 0.25 * hight
             bbox[2] += 0.1 * (bbox[2] - bbox[0])
-            bbox[3] += 0.2 * hight
+            bbox[3] += 0.25 * hight
         if class_name == 'numero':
             #version 1.0 15/03/17
             # bbox[0] -= 0.2 * hight
             # bbox[2] += 0.1 * (bbox[2] - bbox[0])
             # bbox[3] += 0.15 * hight
             #version 2.0
+            # bbox[0] -= 0.2 * hight
+            # bbox[2] += 0.1 * (bbox[2] - bbox[0])
+            #version 21/03/17
             bbox[0] -= 0.2 * hight
-            bbox[2] += 0.1 * (bbox[2] - bbox[0])
+            bbox[1]-=0.05 * hight
+            bbox[2] += 0.15 * (bbox[2] - bbox[0])
+            bbox[3] +=0.05*hight
+
     
 
         if class_name == 'marque':
@@ -221,7 +227,7 @@ def demo(net, image_name):
     res = {}
     roi_file_name=[]
     for cls_ind, cls in enumerate(CLASSES[3:]):
-        cls_ind += 3 # because we skipped background, 'cni', 'person' and 'mrz'
+        cls_ind += 3 # because we skipped background, 'carte' and 'mrz'
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
         cls_scores = scores[:, cls_ind]
         dets = np.hstack((cls_boxes,
