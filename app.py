@@ -22,6 +22,9 @@ import os
 import caffe
 import glob
 
+#Process image with textcleaner
+import subprocess
+
 #CAFFE_ROOT = '/home/haoming/Documents/caffe'
 CAFFE_ROOT ='/home/cuong-nguyen/2016/Workspace/brexia/Septembre/Codesource/caffe-master'
 REPO_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -138,9 +141,17 @@ def classify_upload():
     result = app.clf.classify_image(image)
     logging.info('result: %s', result)
     #print result
-    #proba_list = result[2]  # array of (cls_name, probability)
+    proba_list = result[2]  # array of (cls_name, probability)
+    print proba_list
+   
     is_cni = False # proba_list[0][0] == 'cni'
-    is_carte_grise = True
+    is_carte_grise = False
+    logging.info('proba_list found %s', proba_list[0][0])
+    if proba_list[0][0] == 'cni':
+        is_cni=True
+    if proba_list[0][0] == 'cartegrise':
+        is_carte_grise=True
+        logging.info('carte grise')
     ptime = 0.0
     images = []
     images.append(image) # for classification display
@@ -174,8 +185,18 @@ def classify_upload():
     elif is_carte_grise:
         logging.info('Extracting Region of Interest in Carte Grise...')
         cnis, preproc_time, roi_file_images = detect_carte_grise(filename) # img, res
+
+        #Process image with textcleaner
+        file_out="out.png"
+        rc=subprocess.check_call(["./textcleaner", filename, file_out])
+        cnis_tmp, preproc_time_tmp, roi_file_images_tmp = detect_carte_grise(file_out)
+        res_tmp=[r for i,r,p in cnis_tmp]
+        print "res_tmp:", res_tmp
+
+  		#Combine the results of two process
+
         __roi_file_images__= roi_file_images
-        ptime += preproc_time
+        ptime += preproc_time + preproc_time_tmp
         for img, res, pt in cnis:
             ptime += pt
             images.append(img)
@@ -184,6 +205,14 @@ def classify_upload():
                 # print cls, res[cls]
                 bbox.append(res[cls][0])
                 text_info[cls] = (res[cls][1], '%.3f' % (res[cls][2]))   # (content, prob)
+                
+                # Take the process of textcleaner if the result not good
+                print res[cls][2], cls, cls in res_tmp[0]
+                if(res[cls][2]<0.8) and (cls in res_tmp[0]) and cls !="numero":
+                	print "not correct"
+                	if (res_tmp[0][cls][2]>res[cls][2]):
+                		text_info[cls] = (res_tmp[0][cls][1], '%.3f' % (res_tmp[0][cls][2]))
+                	print "repare:", cls, text_info[cls]
                 # if cls=="nom":
                 #     __isnom__=True
                 # if cls=="prenom":
@@ -208,7 +237,7 @@ def classify_upload():
         print result
         print texts
         return flask.render_template(
-        'index.html', has_result=True, result=result, doc_info=texts, proc_time='%.3f' % (ptime),
+        'index.html', has_result=is_cni or is_carte_grise , result=result, doc_info=texts, proc_time='%.3f' % (ptime),
         imagesrc=embed_image_html(images, bboxes), is_cni=True
         )
     else:
