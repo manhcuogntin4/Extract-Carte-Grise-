@@ -73,7 +73,8 @@ def crop_image(img,cropX=0, cropY=0, cropWidth=0, cropHeight=0):
 	h = np.size(img, 0)
 	w = np.size(img, 1)	
 	res=img[cropY:h-cropHeight, cropX:w-cropWidth]
-	out_path = os.path.join(CACHE_FOLDER, "croped.png")
+	print str(os.getpid())
+	out_path = os.path.join(CACHE_FOLDER, str(os.getpid())+"croped.png")
 	cv2.imwrite(out_path,res)
 	return out_path
 
@@ -85,10 +86,12 @@ def clstm_ocr_carte_grise(img, cls="nom"):
 	if cls=="nom":
 		#model_path = os.path.join(this_dir, 'model_nom_carte_grise_090317.clstm')
 		print "nom-1"
-		model_path = os.path.join(this_dir, 'model_nom_carte_grise_120317x3.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
+		#model_path = os.path.join(this_dir, 'model_nom_carte_grise_120317x3.clstm')
 	if cls=="prenom":
 		print "prenom-1"
-		model_path = os.path.join(this_dir, 'model_prenom_carte_grise_090317.clstm')
+		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')	
+		#model_path = os.path.join(this_dir, 'model_prenom_carte_grise_090317.clstm')
 		#model_path = os.path.join(this_dir, 'model_prenom_carte_grise_120317x3.clstm')
 	if cls=="numero":
 		print "numero-1"
@@ -186,8 +189,8 @@ def clstm_ocr_calib_carte_grise(img, cls="nom"):
 		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
 		#model_path = os.path.join(this_dir, 'model_villex3_carte_grise_120317.clstm')
 	if cls=="type_mine":
-		#model_path = os.path.join(this_dir, 'model_type_mine_carte_grise_090317.clstm')
-		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
+		model_path = os.path.join(this_dir, 'model_type_mine_carte_grise_090317.clstm')
+		#model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')
 	if cls=="marque":
 		#model_path = os.path.join(this_dir, 'model_marque_carte_grise_090317.clstm')
 		model_path = os.path.join(this_dir, 'model-carte-grise-090317.clstm')

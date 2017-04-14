@@ -30,6 +30,7 @@ import werkzeug
 import datetime
 import math
 import pytesseract
+import re
 from PIL import Image
 
 
@@ -116,7 +117,7 @@ def extract_roi(class_name, dets, thresh=0.5):
              #version 1.1 20/03/17
             bbox[0] -= 0.2 * hight
             bbox[1] -= 0.25 * hight
-            bbox[2] += 0.05 * (bbox[2] - bbox[0])
+            bbox[2] += 0.10 * (bbox[2] - bbox[0]) #bbox[2] += 0.05 * (bbox[2] - bbox[0])
             bbox[3] += 0.15 * hight
         if class_name == 'adresse':
             #version 1.0 17/03/17
@@ -135,11 +136,16 @@ def extract_roi(class_name, dets, thresh=0.5):
             # bbox[0] -= 0.05 * hight
             # bbox[2] += 0.05 * (bbox[2] - bbox[0])
             # bbox[3] += 0.15 * hight
-            #version 2.0
+            # #version 2.0
+            # bbox[0] -= 0.05 * hight
+            # bbox[2] += 0.05 * (bbox[2] - bbox[0])
+            # bbox[3] += 0.15 * hight
+            #version 3.0
             bbox[0] -= 0.05 * hight
-            #bbox[1] -= 0.1 * hight
             bbox[2] += 0.05 * (bbox[2] - bbox[0])
-            bbox[3] += 0.15 * hight
+            bbox[3] += 0.45 * hight
+
+
         if class_name == 'ville':
             #version 1.0 15/03/17
             # bbox[0] -= 0.05 * hight
@@ -181,7 +187,7 @@ def extract_roi(class_name, dets, thresh=0.5):
         if class_name == 'type_mine':
             #ok
             bbox[0] -= 0.2 * hight
-            bbox[1] -= 0.1 * hight
+            bbox[1] -= 0.3 * hight #bbox[1] -= 0.1 * hight
             bbox[2] += 0.05 * (bbox[2] - bbox[0])
             bbox[3] += 0.05 * hight
 
@@ -222,19 +228,26 @@ def demo(net, image_name):
            '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
     # Visualize detections for each class
-    CONF_THRESH = 0.1
+    CONF_THRESH = 0.1#CONF_THRESH = 0.1
     NMS_THRESH = 0.3
     res = {}
     roi_file_name=[]
-    for cls_ind, cls in enumerate(CLASSES[3:]):
-        cls_ind += 3 # because we skipped background, 'carte' and 'mrz'
+    # Process msz for check numero
+    msz_numero=""
+    #Process small size prenom
+    bbx_small_prenom=[0,0,0,0] 
+    for cls_ind, cls in enumerate(CLASSES[2:]):
+        cls_ind += 2 # because we skipped background, 'carte' and 'mrz'
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
         cls_scores = scores[:, cls_ind]
         dets = np.hstack((cls_boxes,
                           cls_scores[:, np.newaxis])).astype(np.float32)
+        #print dets
         keep = nms(dets, NMS_THRESH)
         dets = dets[keep, :]
         tmp = extract_roi(cls, dets, thresh=CONF_THRESH)
+        if cls=="prenom" and len(tmp)==0:# for prenom we use a smaller threshold
+            tmp = extract_roi(cls, dets, thresh=0.001)
         if len(tmp) > 0:
             #bbx = tmp[0]  # TODO: Find the zone with greatest probability
             #txt, prob = clstm_ocr(im[bbx[1]:bbx[3], bbx[0]:bbx[2]], cls=='lieu')
@@ -258,31 +271,82 @@ def demo(net, image_name):
                 # else:
                 #     txt, prob="test", 1
                 txt, prob=calib_roi(im,bbx,cls)
+                if cls=="numero":
+                    if check_numero(txt, msz_numero):
+                        txt=msz_numero
+                txt_temp=txt
+                print txt
                 #Process tesseract
-                if(txt!=""):
+                if(txt!=""): #found zone and text in zone
                     pts_cls = [int(bx) for bx in bbx]
+                    print pts_cls
                     if(pts_cls[0]!=pts_cls[2] and pts_cls[1]!=pts_cls[3]):
                         filename_ = werkzeug.secure_filename('output' + str(cls) + image_name + '.png')
                         filename = os.path.join(UPLOAD_FOLDER, filename_)
                         cv2.imwrite(filename, im[pts_cls[1]:pts_cls[3], pts_cls[0]:pts_cls[2]])
                         txt_tesseract = pytesseract.image_to_string(Image.open(filename))
                         txt=txt+":"+ txt_tesseract
+                        #Check msz for numero
+                        # if(cls=="numero"):
+                        #     if msz_numero!="":
+                        #         txt=txt+":"+msz_numero
                         #Add files to the data set
-                        res[cls] = (bbx, txt, prob)
-                        roi_file_name.append(filename)
-                        filetext=filename+"txt"
-                        f=open(filetext, "w")
-                        f.write(txt.encode('utf8'))
-                        f.close()
-                        
+                        print cls, max(cls_scores)
+                        if(cls!="prenom") or max(cls_scores)>=CONF_THRESH or (len(txt_temp.strip())<=5 and len(txt_temp.strip())> 1) : #For prenom, if the scores<CONF_THERSH the size of text must smaller than 5
+                            res[cls] = (bbx, txt, prob)
+                            roi_file_name.append(filename)
+                            filetext=filename+"txt"
+                            f=open(filetext, "w")
+                            f.write(txt.encode('utf8'))
+                            f.close()
+                            #Process nom for prenom
+                            #print cls, max(cls_scores), (len(txt_temp)<=5 and len(txt_temp)> 1)
+                            if cls=="nom": #Take the zone below the nom for the prenom to prevent if FCNN not found it
+                                print cls, "nom-prenom"
+                                bbx_small_prenom[0]=bbx[0]
+                                bbx_small_prenom[2]=bbx[2]
+                                bbx_small_prenom[1]=bbx[3]+40
+                                bbx_small_prenom[3]=bbx[3]+120
+                                filename_ = werkzeug.secure_filename('output' + "prenom" + image_name + '.png')
+                                filename = os.path.join(UPLOAD_FOLDER, filename_)
+                                cv2.imwrite(filename, im[pts_cls[1]+40:pts_cls[3]+120, pts_cls[0]:pts_cls[2]])
+
+                        else:
+                            txt_small_prenom, prob_prenom=calib_roi(im,bbx_small_prenom,"prenom")
+                            print txt_small_prenom, len(txt_small_prenom)
+                            print cls
+                            if(len(txt_small_prenom.strip())<=5 and len(txt_small_prenom.strip())> 1 and cls=="prenom"):
+                                res[cls] = (bbx_small_prenom, txt_small_prenom, prob_prenom)
+                else:#zone of prenom is empty (b)
+                    if (cls=="prenom"):
+                            txt_small_prenom, prob_prenom=calib_roi(im,bbx_small_prenom,"prenom")
+                            print txt_small_prenom, len(txt_small_prenom)
+                            print cls
+                            if(len(txt_small_prenom.strip())<=5 and len(txt_small_prenom.strip())> 1 and cls=="prenom"):
+                                res[cls] = (bbx_small_prenom, txt_small_prenom, prob_prenom)
+
+
+
+
+                            # if len(txt_temp)<5 and  len(txt_temp)> 1:
+                            #     res[cls] = (bbx, txt, prob)
+                            #     roi_file_name.append(filename)
+                            #     filetext=filename+"txt"
+                            #     f=open(filetext, "w")
+                            #     f.write(txt.encode('utf8'))
+                            #     f.close()              
             else :
                 pts_msz = [int(bx) for bx in bbx]
                 filename_ = werkzeug.secure_filename('output' + "mrz" + image_name + '.png')
                 filename = os.path.join(UPLOAD_FOLDER, filename_)
                 cv2.imwrite(filename, im[pts_msz[1]:pts_msz[3], pts_msz[0]:pts_msz[2]])
                 txt, prob= pytesseract.image_to_string(Image.open(filename)), 1
-                if(len(txt)>9):
-                	txt= txt[-5:-3]+"-"+ txt[-7:-5]+"-"+ txt[-9:-7]
+                index=txt.find("FRA")
+                if(index and len(txt)>12):
+                    txt=txt[index+3:index+5]+"-"+ txt[index+5:index+8]+"-"+ txt[index+8:index+10]
+                print txt
+                msz_numero=txt
+                #res[cls] = (bbx, txt, prob)
 
             #txt, prob =calib_roi(im,bbx,cls)
             # res[cls] = (bbx, txt, prob)
@@ -317,7 +381,15 @@ def check(boxes, scores, thresh=0.2, nms_thresh=0.3):
             return False
     return False
 
-
+def check_numero(numero_clstm, numero_msz):
+    print "check_numero"
+    print (numero_clstm.find("-")==-1), len(numero_clstm), len(numero_msz)>0, numero_msz.find("-"), re.search('-[0-9][0-9][0-9]-', numero_msz) is not None, re.search('-[0-9][0-9][0-9]-', numero_clstm) is None 
+    if (len(numero_clstm)>0 and len(numero_msz)>0 and numero_msz.find("-") and \
+        re.search('-[0-9][0-9][0-9]-', numero_clstm) is None and  re.search('-[0-9][0-9][0-9]-', numero_msz) is not None):
+        print "numero not correct"
+        return True
+    else:
+        return False
 """demo2 is a complement for demo, in considering the multi-cni case 
     and if we should do faster-rcnn a second time"""
 def demo2(net, image_name):
@@ -511,11 +583,21 @@ def calib_roi(im,bbx,cls):
     #txt, prob = clstm_ocr_carte_grise(im[bbx[1]:bbx[3], bbx[0]:bbx[2]], cls=='lieu')
     txt, prob = clstm_ocr_carte_grise(im[bbx[1]:bbx[3], bbx[0]:bbx[2]], cls)
     if(prob<0.99):
-        for i in range(0,2):
+        print txt, prob, bbx[1], bbx[3]
+        for i in range(1,4):    
             for j in range(0,2):
-                #print "calib", bbx
                 #txt_temp,prob_temp=clstm_ocr_calib_carte_grise(im[bbx[1]-5*i*math.pow( -1, j):bbx[3]+5*i*math.pow( -1, j), bbx[0]-3*i*math.pow( -1, j):bbx[2]+3*i*math.pow( -1, j)], cls=='lieu')
-                txt_temp,prob_temp=clstm_ocr_calib_carte_grise(im[bbx[1]-5*i*math.pow( -1, j):bbx[3]+5*i*math.pow( -1, j), bbx[0]-3*i*math.pow( -1, j):bbx[2]+3*i*math.pow( -1, j)], cls)
+                 
+                if(cls=="numero" or cls=="marque" or cls=="type_mine"):
+                    txt_temp,prob_temp=clstm_ocr_calib_carte_grise(im[bbx[1]-5*i*math.pow( -1, j):bbx[3]-5*i*math.pow( -1, j), bbx[0]-3*i*math.pow( -1, j):bbx[2]+3*i*math.pow( -1, j)], cls)
+                    print txt_temp, prob_temp, bbx[1]-5*i*math.pow( -1, j), bbx[3]-5*i*math.pow( -1, j)
+                else:
+                    txt_temp,prob_temp=clstm_ocr_calib_carte_grise(im[bbx[1]-5*i*math.pow( -1, j):bbx[3]+5*i*math.pow( -1, j), bbx[0]-3*i*math.pow( -1, j):bbx[2]+3*i*math.pow( -1, j)], cls)
+                    # if(cls=="nom"):
+                    #     txt_temp_inv,prob_temp_inv=clstm_ocr_calib_carte_grise(im[bbx[1]-5*i*math.pow( -1, j):bbx[3]-5*i*math.pow( -1, j), bbx[0]-3*i*math.pow( -1, j):bbx[2]+3*i*math.pow( -1, j)], cls)
+                    #     if(prob_temp_inv>prob_temp):
+                    #         prob_temp=prob_temp_inv
+                    #         txt_temp=txt_temp_inv
                 if(prob<prob_temp):
                     txt=txt_temp
                     prob=prob_temp

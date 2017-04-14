@@ -21,9 +21,27 @@ from flask import Flask, redirect, url_for, request, session, abort, render_temp
 import os
 import caffe
 import glob
+#Multiprocess
+from multiprocessing import Pool   
+import multiprocessing.pool
+import multiprocessing 
+import subprocess
+from multiprocessing import Manager
+from functools import partial
+
+#Mulitprocess with child process
+from multiprocessing.pool import Pool as PoolParent
+from multiprocessing import Process
+import time
+#Process Unicode here
+import sys
+reload(sys)
+sys.setdefaultencoding("ISO-8859-1")
 
 #Process image with textcleaner
 import subprocess
+
+
 
 #CAFFE_ROOT = '/home/haoming/Documents/caffe'
 CAFFE_ROOT ='/home/cuong-nguyen/2016/Workspace/brexia/Septembre/Codesource/caffe-master'
@@ -158,9 +176,47 @@ def classify_upload():
     bboxes, texts = [], []
     if is_cni:
         logging.info('Extracting Region of Interest in CNI...')
-        cnis, preproc_time, roi_file_images = detect_cni(filename) # img, res
+        file_out="out.png"
+        rc=subprocess.check_call(["./textcleaner", "-u", filename, file_out])
+
+        #p = Pool(8)
+        p=MyPool(8)
+        
+        # outputlock = Lock()  # stdout / stderr writes lock
+        # iolock = Lock()      # input/output lock
+        
+
+        # queue = Manager().Queue()
+        # procs = [multiprocessing.Process(target=do_work, args=((queue),i)) for i in [filename, file_out]]
+        # for p in procs: p.start()
+        # #for p in procs: p.join()
+
+        # results = queue.get()
+        # #while not queue.empty():
+        # #   results.append(queue.get)
+        # logging.info("result")
+
+        # cnis, preproc_time, roi_file_images=results[0]
+        # cnis_tmp, preproc_time_tmp, roi_file_images_tmp=results[1]
+
+        #res=p.map(func, [filename, file_out])
+        res =p.map(detect_cni,[filename, file_out])
+        p.close()
+        p.join()
+        cnis, preproc_time, roi_file_images=res[0]
+        cnis_tmp, preproc_time_tmp, roi_file_images_tmp=res[1] 
+        #cnis, preproc_time, roi_file_images = detect_cni(filename) # img, res
+         #Process image with textcleaner
+       
+        #cnis_tmp, preproc_time_tmp, roi_file_images_tmp = detect_cni(file_out)
+        
+
+
+
+        res_tmp=[r for i,r,p in cnis_tmp]
+
         __roi_file_images__= roi_file_images
-        ptime += preproc_time
+        ptime += preproc_time+ preproc_time_tmp
         for img, res, pt in cnis:
             ptime += pt
             images.append(img)
@@ -177,6 +233,11 @@ def classify_upload():
                     __islieu__=True
                 if cls=="epouse":
                     __isepouse__=True
+                #Process textcleaner if result is not good
+                if(res[cls][2]<0.8) and (cls in res_tmp[0]) and cls !="lieu":
+                	if (res_tmp[0][cls][2]>res[cls][2]):
+                		text_info[cls] = (res_tmp[0][cls][1], '%.3f' % (res_tmp[0][cls][2]))
+
 
             bboxes.append(bbox)
             texts.append(text_info)
@@ -184,12 +245,21 @@ def classify_upload():
 
     elif is_carte_grise:
         logging.info('Extracting Region of Interest in Carte Grise...')
-        cnis, preproc_time, roi_file_images = detect_carte_grise(filename) # img, res
-
-        #Process image with textcleaner
+        #Apply textcleaner
         file_out="out.png"
         rc=subprocess.check_call(["./textcleaner", filename, file_out])
-        cnis_tmp, preproc_time_tmp, roi_file_images_tmp = detect_carte_grise(file_out)
+        #Apply parallel
+        p = Pool(8)
+        res =p.map(detect_carte_grise,[filename, file_out])
+        p.close()
+        p.join()
+        cnis, preproc_time, roi_file_images=res[0]
+        cnis_tmp, preproc_time_tmp, roi_file_images_tmp=res[1] 
+        #cnis, preproc_time, roi_file_images = detect_carte_grise(filename) # img, res
+
+        #Process image with textcleaner
+        
+        #cnis_tmp, preproc_time_tmp, roi_file_images_tmp = detect_carte_grise(file_out)
         res_tmp=[r for i,r,p in cnis_tmp]
         print "res_tmp:", res_tmp
 
@@ -207,12 +277,10 @@ def classify_upload():
                 text_info[cls] = (res[cls][1], '%.3f' % (res[cls][2]))   # (content, prob)
                 
                 # Take the process of textcleaner if the result not good
-                print res[cls][2], cls, cls in res_tmp[0]
                 if(res[cls][2]<0.8) and (cls in res_tmp[0]) and cls !="numero":
                 	print "not correct"
                 	if (res_tmp[0][cls][2]>res[cls][2]):
                 		text_info[cls] = (res_tmp[0][cls][1], '%.3f' % (res_tmp[0][cls][2]))
-                	print "repare:", cls, text_info[cls]
                 # if cls=="nom":
                 #     __isnom__=True
                 # if cls=="prenom":
@@ -454,6 +522,23 @@ def hasXpath(xpath):
         return True
     except:
         return False
+
+def do_work(queue, filename):
+    result=detect_cni(filename)
+    print "do_work"
+    queue.put(result)
+
+#Multiprocess
+class NoDaemonProcess(Process):
+    def _get_daemon(self):
+        return False
+    def _set_daemon(self, value):
+        pass
+    daemon = property(_get_daemon, _set_daemon)
+
+class MyPool(PoolParent):
+    Process = NoDaemonProcess
+
 
 if __name__ == '__main__':
     app.secret_key = os.urandom(12)
