@@ -38,3 +38,12 @@ Start trainning with command line :
 ./tools/train_net.py --gpu 0 --solver models/axa_poc/VGG_CNN_M_1024/faster_rcnn_end2end/solver.prototxt --weights data/imagenet_models/VGG_CNN_M_1024.v2.caffemodel --imdb axa_train --iters 80000 --cfg experiments/cfgs/faster_rcnn_end2end.yml
 
 Step 7 : Prepare data for CLSTM with gendataset.py
+
+Some commands in AWS
+screen -r
+screen
+Ctrl A D : quit screen
+Ctrl D : logout
+scp -i "file.pem" ubuntu@ec2.eu-west-1.compute.amazonaws.com:~/web_demo_permis_version1.0/app.py .
+aws s3 cp s3://
+ssh -i "file.pem" ubuntu@ec2.eu-west-1.compute.amazonaws.com
